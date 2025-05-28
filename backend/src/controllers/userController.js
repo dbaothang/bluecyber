@@ -1,23 +1,21 @@
 const User = require("../models/User");
-const Board = require("../models/Board");
 const jwt = require("jsonwebtoken");
+const Board = require("../models/Board");
 const { createDefaultBoard } = require("../utils/boardUtils");
 
 // Sign up a new user
 exports.signup = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { email, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ error: "Username or email already exists" });
+      return res.status(400).json({ error: "Email already exists" });
     }
 
     // Create new user
-    const user = new User({ username, email, password });
+    const user = new User({ email, password });
     await user.save();
 
     // Create default board for the user
@@ -28,7 +26,9 @@ exports.signup = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.status(201).json({ token, userId: user._id });
+    res
+      .status(201)
+      .json({ token, userId: user._id, email: user.email, boardId: board._id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -37,10 +37,10 @@ exports.signup = async (req, res) => {
 // Log in a user
 exports.login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    // Find user by username
-    const user = await User.findOne({ username });
+    // Find user by email
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -56,7 +56,19 @@ exports.login = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.json({ token, userId: user._id });
+    res.json({ token, userId: user._id, email: user.email });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getUserBoards = async (req, res) => {
+  try {
+    if (req.params.userId != req.user.userId) {
+      return res.status(403).json({ error: "Unauthorizaton" });
+    }
+    const boards = await Board.find({ owner: req.user.userId });
+    res.json(boards);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -9,22 +9,15 @@ const HomePage = () => {
 
   useEffect(() => {
     if (user) {
-      // Redirect to the user's board
-      api
-        .get("/api/boards")
-        .then((response) => {
-          if (response.data.length > 0) {
-            navigate(`/board/${response.data[0]._id}`);
-          } else {
-            // Create a new board if none exists
-            api.post("/api/boards").then((response) => {
-              navigate(`/board/${response.data._id}`);
-            });
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching boards:", err);
+      // Nếu user đã có boards, chuyển đến board đầu tiên
+      if (user.boards && user.boards.length > 0) {
+        navigate(`/board/${user.boards[0]._id}`);
+      } else {
+        // Nếu không có board, tạo mới
+        api.post("/api/boards").then((response) => {
+          navigate(`/board/${response.data._id}`);
         });
+      }
     }
   }, [user, navigate]);
 

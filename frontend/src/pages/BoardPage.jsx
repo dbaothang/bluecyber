@@ -18,6 +18,7 @@ const BoardPage = () => {
     const fetchBoardData = async () => {
       try {
         const response = await api.get(`/api/boards/${boardId}`);
+        console.log("tesstt")
         setBoard(response.data.board);
         setTasks(response.data.tasks);
       } catch (err) {

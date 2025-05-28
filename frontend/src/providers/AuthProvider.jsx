@@ -9,58 +9,85 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check if user is logged in on initial load
+  // Initialize auth state
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeAuth = async () => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
+          // Verify token with server if needed
           api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          // You might want to verify the token with the server here
+
+          // Optionally fetch user data here
           setUser({ token });
         }
       } catch (err) {
-        console.error("Auth check failed:", err);
+        console.error("Authentication check failed:", err);
         logout();
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
+    initializeAuth();
   }, []);
 
-  const login = async (username, password) => {
+  const login = async (email, password) => {
     try {
-      const response = await api.post("/api/user/login", {
-        username,
-        password,
+      const { data } = await api.post("/api/user/login", { email, password });
+
+      localStorage.setItem("token", data.token);
+      api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+
+      // Lấy thông tin boards của user sau khi login
+      const boardsResponse = await api.get(`/api/user/${data.userId}/boards`);
+
+      setUser({
+        token: data.token,
+        userId: data.userId,
+        email: data.email,
+        boards: boardsResponse.data, // Lưu danh sách boards
       });
-      localStorage.setItem("token", response.data.token);
-      api.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${response.data.token}`;
-      setUser({ token: response.data.token, userId: response.data.userId });
-      return response.data;
+
+      // Redirect đến board đầu tiên nếu có
+      if (boardsResponse.data.length > 0) {
+        navigate(`/board/${boardsResponse.data[0]._id}`);
+      } else {
+        // Nếu không có board, tạo mới
+        const newBoard = await api.post("/api/boards");
+        navigate(`/board/${newBoard.data._id}`);
+      }
+
+      return data;
     } catch (err) {
+      console.error("Login failed:", err);
       throw err;
     }
   };
 
-  const signup = async (username, email, password) => {
+  const signup = async (email, password) => {
     try {
-      const response = await api.post("/api/user/signup", {
-        username,
-        email,
-        password,
+      const { data } = await api.post("/api/user/signup", { email, password });
+
+      localStorage.setItem("token", data.token);
+      api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+
+      setUser({
+        token: data.token,
+        userId: data.userId,
+        email: data.email,
       });
-      localStorage.setItem("token", response.data.token);
-      api.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${response.data.token}`;
-      setUser({ token: response.data.token, userId: response.data.userId });
-      return response.data;
+
+      // Redirect đến board mới tạo
+      if (data.boardId) {
+        navigate(`/board/${data.boardId}`);
+      } else {
+        navigate("/");
+      }
+
+      return data;
     } catch (err) {
+      console.error("Signup failed:", err);
       throw err;
     }
   };
@@ -72,11 +99,26 @@ export const AuthProvider = ({ children }) => {
     navigate("/login");
   };
 
+  const value = {
+    user,
+    login,
+    signup,
+    logout,
+    loading,
+    isAuthenticated: !!user?.token,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
+    <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
