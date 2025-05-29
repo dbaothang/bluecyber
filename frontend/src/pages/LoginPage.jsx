@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
@@ -9,6 +9,14 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const lastVisitedBoardId = localStorage.getItem("lastVisitedBoardId");
+    if (token && lastVisitedBoardId) {
+      navigate(`/board/${lastVisitedBoardId}`);
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

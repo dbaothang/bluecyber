@@ -65,9 +65,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (email, password) => {
+  const signup = async (email, password, confirmPassword) => {
     try {
-      const { data } = await api.post("/api/user/signup", { email, password });
+      const { data } = await api.post("/api/user/signup", {
+        email,
+        password,
+        confirmPassword,
+      });
 
       localStorage.setItem("token", data.token);
       api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
@@ -78,22 +82,16 @@ export const AuthProvider = ({ children }) => {
         email: data.email,
       });
 
-      // Redirect đến board mới tạo
-      if (data.boardId) {
-        navigate(`/board/${data.boardId}`);
-      } else {
-        navigate("/");
-      }
-
-      return data;
+      // 🔴 Sửa chỗ này: Xóa đoạn redirect ở đây
+      return data; // Chỉ trả về data thôi
     } catch (err) {
       console.error("Signup failed:", err);
-      throw err;
+      throw err; // Giữ nguyên để xử lý lỗi ở phía component
     }
   };
-
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("lastVisitedBoardId");
     delete api.defaults.headers.common["Authorization"];
     setUser(null);
     navigate("/login");

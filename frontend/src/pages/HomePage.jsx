@@ -8,17 +8,50 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      // Nếu user đã có boards, chuyển đến board đầu tiên
-      if (user.boards && user.boards.length > 0) {
-        navigate(`/board/${user.boards[0]._id}`);
-      } else {
-        // Nếu không có board, tạo mới
-        api.post("/api/boards").then((response) => {
-          navigate(`/board/${response.data._id}`);
-        });
+    const checkAuthAndRedirect = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (token) {
+          // Nếu có token nhưng chưa có user info (trường hợp refresh trang)
+          if (!user) {
+            // Có thể thêm logic fetch user info ở đây nếu cần
+            return;
+          }
+
+          // Kiểm tra xem có boardId trong localStorage không (board đã xem gần nhất)
+          const lastVisitedBoardId = localStorage.getItem("lastVisitedBoardId");
+
+          if (lastVisitedBoardId) {
+            // Chuyển hướng đến board đã xem gần nhất
+            navigate(`/board/${lastVisitedBoardId}`);
+            return;
+          }
+
+          // Nếu không có lastVisitedBoardId, kiểm tra boards của user
+          if (user.boards && user.boards.length > 0) {
+            // Lưu board đầu tiên vào localStorage và chuyển hướng
+            localStorage.setItem("lastVisitedBoardId", user.boards[0]._id);
+            navigate(`/board/${user.boards[0]._id}`);
+          } else {
+            // Nếu user chưa có board nào, tạo board mới
+            const response = await api.post("/api/boards");
+            localStorage.setItem("lastVisitedBoardId", response.data._id);
+            navigate(`/board/${response.data._id}`);
+          }
+        } else {
+          // Nếu không có token, chuyển đến login
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Redirect error:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("lastVisitedBoardId");
+        navigate("/login");
       }
-    }
+    };
+
+    checkAuthAndRedirect();
   }, [user, navigate]);
 
   return (
@@ -27,7 +60,7 @@ const HomePage = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-4">
           Welcome to Task Board
         </h1>
-        <p className="text-gray-600">Please sign in or sign up to continue</p>
+        <p className="text-gray-600">Loading your boards...</p>
       </div>
     </div>
   );

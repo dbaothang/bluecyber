@@ -6,8 +6,13 @@ const { createDefaultBoard } = require("../utils/boardUtils");
 // Sign up a new user
 exports.signup = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, confirmPassword } = req.body;
 
+    if (password !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ error: "password must equal to confirmPassword" });
+    }
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -19,7 +24,7 @@ exports.signup = async (req, res) => {
     await user.save();
 
     // Create default board for the user
-    await createDefaultBoard(user._id);
+    const board = await createDefaultBoard(user._id);
 
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
