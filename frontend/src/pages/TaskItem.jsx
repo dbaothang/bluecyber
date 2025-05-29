@@ -16,7 +16,7 @@ const TaskItem = ({ task, onEdit, onDelete }) => {
         <div className="flex space-x-1">
           <button
             onClick={onEdit}
-            className="p-1 text-gray-500 hover:text-primary-500"
+            className="p-1 text-gray-500 hover:text-green-500"
           >
             <PencilIcon className="w-4 h-4" />
           </button>

@@ -18,7 +18,6 @@ const BoardPage = () => {
     const fetchBoardData = async () => {
       try {
         const response = await api.get(`/api/boards/${boardId}`);
-        console.log("tesstt")
         setBoard(response.data.board);
         setTasks(response.data.tasks);
       } catch (err) {
@@ -73,7 +72,9 @@ const BoardPage = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
+      console.log(taskId);
       await api.delete(`/api/tasks/${taskId}`);
+      console.log("troll");
       setTasks(tasks.filter((task) => task._id !== taskId));
       toast.success("Task deleted successfully");
     } catch (err) {

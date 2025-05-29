@@ -38,14 +38,16 @@ exports.deleteTask = async (req, res) => {
     if (!task) {
       return res.status(404).json({ error: "Task not found" });
     }
+    console.log(task);
 
     // Check if the user owns the board that this task belongs to
     const board = await Board.findById(task.board);
     if (board.owner.toString() !== req.user.userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
+    console.log(board);
 
-    await task.remove();
+    await Task.deleteOne({ _id: task._id });
 
     res.json({ message: "Task deleted successfully" });
   } catch (err) {

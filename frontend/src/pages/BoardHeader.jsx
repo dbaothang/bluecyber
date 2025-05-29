@@ -3,7 +3,8 @@ import {
   ArrowLeftIcon,
   PencilIcon,
   CheckIcon,
-} from "@heroicons/react/24/solid";
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { useAuth } from "../providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
@@ -94,21 +95,17 @@ const BoardHeader = ({ board, onUpdate }) => {
                 onClick={handleEditToggle}
                 className="flex items-center px-3 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600"
               >
-                <PencilIcon className="w-4 h-4 mr-1" />
+                <XMarkIcon className="w-4 h-4 mr-1" />
                 Cancel
               </button>
             </div>
           </div>
         ) : (
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <h1 className="text-2xl font-bold text-gray-900">{board.name}</h1>
-              <button
-                onClick={handleEditToggle}
-                className="flex items-center px-3 py-1 text-sm text-white bg-primary-500 rounded hover:bg-primary-600"
-              >
-                <PencilIcon className="w-4 h-4 mr-1" />
-                Edit
+              <button onClick={handleEditToggle} className="ml-2">
+                <PencilIcon className="w-5 h-5 text-gray-500 hover:text-gray-700" />
               </button>
             </div>
             {board.description && (
