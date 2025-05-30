@@ -5,7 +5,7 @@ services:
   backend:
     build: ./backend # Xây dựng từ Dockerfile trong thư mục backend
     ports:
-      - "3002:3002" # Ánh xạ cổng 3000 từ container ra máy thật
+      - "3002:3002" # Ánh xạ cổng 3002 từ container ra máy thật
     environment:
       - MONGO_URI=mongodb://mongo:27017/taskboard # Kết nối tới MongoDB với database tên taskboard
     depends_on:
@@ -20,7 +20,7 @@ services:
     ports:
       - "5173:5173" # Ánh xạ cổng 5173
     environment:
-      - VITE_API_BASE_URL=http://45.77.172.27:3002 # Địa chỉ backend để frontend gọi API
+      - VITE_API_BASE_URL=http://backend:3002 # Địa chỉ backend để frontend gọi API
     volumes:
       - ./frontend:/app
       - /app/node_modules
