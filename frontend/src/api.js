@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://45.77.172.27:3002",
+  baseURL: "http://backend:3002",
 });
 
 // Request interceptor for API calls
