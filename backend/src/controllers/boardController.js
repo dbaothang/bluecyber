@@ -23,6 +23,22 @@ exports.getBoard = async (req, res) => {
   }
 };
 
+exports.getUserBoards = async (req, res) => {
+  try {
+    // Lấy tất cả boards thuộc về user hiện tại
+    const boards = await Board.find({ owner: req.user.userId })
+      .sort({ createdAt: -1 }) // Sắp xếp mới nhất trước
+      .select("-__v"); // Loại bỏ trường __v
+
+    res.json(boards);
+  } catch (err) {
+    res.status(500).json({
+      error: "Failed to fetch boards",
+      details: err.message,
+    });
+  }
+};
+
 // Create a new board
 exports.createBoard = async (req, res) => {
   try {
@@ -35,6 +51,29 @@ exports.createBoard = async (req, res) => {
     });
 
     await board.save();
+
+    const defaultTasks = [
+      {
+        name: "Task in Progress",
+        description: "This is a sample task in progress",
+        status: "in-progress",
+        board: board._id,
+      },
+      {
+        name: "Task Completed",
+        description: "This is a sample completed task",
+        status: "completed",
+        board: board._id,
+      },
+      {
+        name: "Task Wont Do",
+        description: "This is a sample task that wont be done",
+        status: "wont-do",
+        board: board._id,
+      },
+    ];
+
+    await Task.insertMany(defaultTasks);
 
     res.status(201).json(board);
   } catch (err) {
@@ -86,7 +125,7 @@ exports.deleteBoard = async (req, res) => {
     await Task.deleteMany({ board: board._id });
 
     // Delete the board
-    await board.remove();
+    await Board.deleteOne({ _id: board._id });
 
     res.json({ message: "Board deleted successfully" });
   } catch (err) {

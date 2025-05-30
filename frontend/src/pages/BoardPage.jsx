@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import { toast } from "react-hot-toast";
-import BoardHeader from "./BoardHeader.jsx";
+import BoardHeader from "./BoardHeader";
 import TaskColumn from "./TaskColumn";
 import { useAuth } from "../providers/AuthProvider";
+import BoardsSidebar from "./../components/BoardsSidebar";
 
 const BoardPage = () => {
   const { boardId } = useParams();
@@ -20,6 +21,7 @@ const BoardPage = () => {
         const response = await api.get(`/api/boards/${boardId}`);
         setBoard(response.data.board);
         setTasks(response.data.tasks);
+        localStorage.setItem("lastVisitedBoardId", boardId);
       } catch (err) {
         console.error("Error fetching board:", err);
         if (err.response?.status === 401) {
@@ -47,17 +49,8 @@ const BoardPage = () => {
   };
 
   const handleCreateTask = async (taskData) => {
-    // Nhận cả object taskData thay vì chỉ status
     try {
-      const response = await api.post(
-        `/api/tasks/${boardId}`,
-        taskData, // Gửi trực tiếp object, không cần JSON.stringify
-        {
-          headers: {
-            "Content-Type": "application/json", // Đảm bảo header đúng
-          },
-        }
-      );
+      const response = await api.post(`/api/tasks/${boardId}`, taskData);
       setTasks([...tasks, response.data]);
       toast.success("Task created successfully");
     } catch (err) {
@@ -79,14 +72,19 @@ const BoardPage = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      console.log(taskId);
       await api.delete(`/api/tasks/${taskId}`);
-      console.log("troll");
       setTasks(tasks.filter((task) => task._id !== taskId));
       toast.success("Task deleted successfully");
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to delete task");
     }
+  };
+
+  const handleBoardSelect = (newBoardId) => {
+    setLoading(true);
+    setBoard(null);
+    setTasks([]);
+    navigate(`/board/${newBoardId}`);
   };
 
   if (loading) {
@@ -108,27 +106,46 @@ const BoardPage = () => {
   }
 
   const statusColumns = [
-    { id: "in-progress", title: "In Progress" },
-    { id: "completed", title: "Completed" },
-    { id: "wont-do", title: "Wont Do" },
+    { id: "in-progress", title: "In Progress", color: "bg-blue-100" },
+    { id: "completed", title: "Completed", color: "bg-green-100" },
+    { id: "wont-do", title: "Wont Do", color: "bg-gray-100" },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <BoardHeader board={board} onUpdate={handleUpdateBoard} />
+    <div className="flex h-screen bg-gray-50">
+      {/* Fixed Sidebar */}
+      <BoardsSidebar
+        currentBoardId={boardId}
+        onBoardSelect={handleBoardSelect}
+      />
 
-      <div className="container px-4 mx-auto mt-6">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {statusColumns.map((column) => (
-            <TaskColumn
-              key={column.id}
-              title={column.title}
-              tasks={tasks.filter((task) => task.status === column.id)}
-              onCreateTask={(taskData) => handleCreateTask(taskData)}
-              onUpdateTask={handleUpdateTask}
-              onDeleteTask={handleDeleteTask}
-            />
-          ))}
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <BoardHeader board={board} onUpdate={handleUpdateBoard} />
+
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {statusColumns.map((column) => (
+                <TaskColumn
+                  key={column.id}
+                  title={column.title}
+                  tasks={tasks.filter((task) => task.status === column.id)}
+                  status={column.id}
+                  color={column.color}
+                  onCreateTask={(taskData) =>
+                    handleCreateTask({
+                      ...taskData,
+                      board: boardId,
+                      status: column.id,
+                    })
+                  }
+                  onUpdateTask={handleUpdateTask}
+                  onDeleteTask={handleDeleteTask}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

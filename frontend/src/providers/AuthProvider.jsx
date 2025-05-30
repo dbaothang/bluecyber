@@ -34,29 +34,40 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      // 1. Gửi yêu cầu đăng nhập
       const { data } = await api.post("/api/user/login", { email, password });
 
+      // 2. Lưu token và cấu hình header cho các request tiếp theo
       localStorage.setItem("token", data.token);
       api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
 
-      // Lấy thông tin boards của user sau khi login
-      const boardsResponse = await api.get(`/api/user/${data.userId}/boards`);
+      let boards = [];
 
+      // 3. Gửi yêu cầu lấy danh sách boards
+      const boardsResponse = await api.get(`/api/user/${data.userId}/boards`);
+      boards = boardsResponse.data;
+
+      // 4. Nếu chưa có board nào, tạo một board mặc định
+      if (boards.length === 0) {
+        const newBoardResponse = await api.post("/api/boards", {
+          name: "My First Board",
+          description: "This board was created automatically after login.",
+        });
+
+        const newBoard = newBoardResponse.data;
+        boards.push(newBoard); // thêm board mới vào danh sách
+      }
+
+      // 5. Cập nhật state người dùng
       setUser({
         token: data.token,
         userId: data.userId,
         email: data.email,
-        boards: boardsResponse.data, // Lưu danh sách boards
+        boards: boards,
       });
 
-      // Redirect đến board đầu tiên nếu có
-      if (boardsResponse.data.length > 0) {
-        navigate(`/board/${boardsResponse.data[0]._id}`);
-      } else {
-        // Nếu không có board, tạo mới
-        const newBoard = await api.post("/api/boards");
-        navigate(`/board/${newBoard.data._id}`);
-      }
+      // 6. Chuyển hướng đến board đầu tiên
+      navigate(`/board/${boards[0]._id}`);
 
       return data;
     } catch (err) {
