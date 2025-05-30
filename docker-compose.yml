@@ -20,7 +20,7 @@ services:
     ports:
       - "5173:5173" # Ánh xạ cổng 5173
     environment:
-      - VITE_API_BASE_URL=http://backend:3002 # Địa chỉ backend để frontend gọi API
+      - VITE_API_BASE_URL=http://45.77.172.77:3002 # Địa chỉ backend để frontend gọi API
     volumes:
       - ./frontend:/app
       - /app/node_modules

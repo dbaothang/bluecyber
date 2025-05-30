@@ -6,7 +6,6 @@ import {
   TrashIcon,
   PencilIcon,
 } from "@heroicons/react/24/solid";
-import TaskItem from "./TaskItem";
 
 const TaskColumn = ({
   title,
@@ -17,27 +16,44 @@ const TaskColumn = ({
 }) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
-  const [editTaskData, setEditTaskData] = useState({
+  const columnStatus = title.toLowerCase().replace(" ", "-");
+
+  // State for new task
+  const [newTaskData, setNewTaskData] = useState({
     name: "",
     description: "",
     icon: "📝",
-    status: title.toLowerCase().replace(" ", "-"),
+    status: columnStatus,
   });
+
+  // State for editing task, initialized when edit starts
+  const [editTaskData, setEditTaskData] = useState(null);
 
   const defaultTaskNames = {
     "in-progress": "Task In Progress",
     completed: "Task Completed",
-    "wont-do": "Task Won't Do",
+    "wont-do": "Task Wont Do",
   };
 
   const handleAddTask = () => {
-    onCreateTask({
-      name: defaultTaskNames[editTaskData.status] || "New Task",
-      description: editTaskData.description,
-      icon: editTaskData.icon,
-      status: editTaskData.status,
+    const taskData = {
+      name: newTaskData.name.trim() || defaultTaskNames[columnStatus] || "",
+      description: newTaskData.description.trim(),
+      icon: newTaskData.icon,
+      status: columnStatus,
+    };
+    console.log(taskData);
+
+    onCreateTask(taskData); // Truyền cả object data
+
+    // Reset form
+    setNewTaskData({
+      name: "",
+      description: "",
+      icon: "📝",
+      status: columnStatus,
     });
-    resetForm();
+    setIsAddingTask(false);
   };
 
   const handleEditStart = (task) => {
@@ -51,31 +67,45 @@ const TaskColumn = ({
   };
 
   const handleSave = (taskId) => {
-    onUpdateTask(taskId, editTaskData);
+    if (!editTaskData) return; // Thêm kiểm tra này
+
+    onUpdateTask(taskId, {
+      name:
+        editTaskData.name.trim() ||
+        defaultTaskNames[editTaskData.status] ||
+        "New Task",
+      description: editTaskData.description.trim(),
+      icon: editTaskData.icon,
+      status: editTaskData.status,
+    });
+    console.log("trolll");
+
     setEditingTaskId(null);
+    setEditTaskData(null); // Reset về null sau khi save
   };
 
-  const resetForm = () => {
-    setEditTaskData({
+  const resetNewTaskForm = () => {
+    setNewTaskData({
       name: "",
       description: "",
       icon: "📝",
-      status: title.toLowerCase().replace(" ", "-"),
+      status: columnStatus,
     });
     setIsAddingTask(false);
   };
 
-  const handleChange = (e) => {
-    setEditTaskData({
-      ...editTaskData,
+  const handleNewTaskChange = (e) => {
+    setNewTaskData({
+      ...newTaskData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleStatusChange = (status) => {
+  const handleEditTaskChange = (e) => {
+    if (!editTaskData) return;
     setEditTaskData({
       ...editTaskData,
-      status,
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -90,63 +120,32 @@ const TaskColumn = ({
 
       <div className="space-y-3">
         {tasks.map((task) => (
-          <div key={task._id} className="p-3 border border-gray-200 rounded-lg">
+          <div
+            key={task._id}
+            className="p-3 border border-gray-200 rounded-lg group"
+          >
             {editingTaskId === task._id ? (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <select
-                    name="icon"
-                    value={editTaskData.icon}
-                    onChange={handleChange}
-                    className="w-16 p-1 text-center border rounded"
-                  >
-                    <option value="📝">📝 Note</option>
-                    <option value="🔧">🔧 Fix</option>
-                    <option value="✨">✨ Feature</option>
-                    <option value="🐞">🐞 Bug</option>
-                    <option value="🚀">🚀 Improve</option>
-                  </select>
+                  <span className="text-xl">{editTaskData?.icon}</span>
                   <input
                     type="text"
                     name="name"
-                    value={editTaskData.name}
-                    onChange={handleChange}
-                    placeholder="Task name"
+                    value={editTaskData?.name || ""}
+                    onChange={handleEditTaskChange}
+                    placeholder={defaultTaskNames[task.status] || "New Task"}
                     className="flex-1 p-1 border rounded"
                   />
                 </div>
 
                 <textarea
                   name="description"
-                  value={editTaskData.description}
-                  onChange={handleChange}
+                  value={editTaskData?.description || ""}
+                  onChange={handleEditTaskChange}
                   placeholder="Enter a short description"
                   className="w-full p-2 text-sm border rounded"
                   rows="3"
                 />
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Status</p>
-                  <div className="flex flex-col space-y-2">
-                    {["in-progress", "completed", "wont-do"].map((status) => (
-                      <label
-                        key={status}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="radio"
-                          name="status"
-                          checked={editTaskData.status === status}
-                          onChange={() => handleStatusChange(status)}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="capitalize">
-                          {status.replace("-", " ")}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
 
                 <div className="flex justify-between pt-2">
                   <button
@@ -158,7 +157,10 @@ const TaskColumn = ({
                   </button>
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => setEditingTaskId(null)}
+                      onClick={() => {
+                        setEditingTaskId(null);
+                        setEditTaskData(null);
+                      }}
                       className="flex items-center px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
                     >
                       <XMarkIcon className="w-4 h-4 mr-1" />
@@ -175,11 +177,33 @@ const TaskColumn = ({
                 </div>
               </div>
             ) : (
-              <TaskItem
-                task={task}
-                onEdit={() => handleEditStart(task)}
-                onDelete={() => onDeleteTask(task._id)}
-              />
+              <div className="flex items-start">
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <span className="mr-2 text-xl">{task.icon}</span>
+                    <p className="font-medium">{task.name}</p>
+                  </div>
+                  {task.description && (
+                    <p className="text-sm text-gray-600 mt-1 pl-7">
+                      {task.description}
+                    </p>
+                  )}
+                </div>
+                <div className="flex space-x-2 opacity-0 group-hover:opacity-100">
+                  <button
+                    onClick={() => handleEditStart(task)}
+                    className="text-gray-500 hover:text-blue-500"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => onDeleteTask(task._id)}
+                    className="text-gray-500 hover:text-red-500"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ))}
@@ -187,35 +211,34 @@ const TaskColumn = ({
 
       {isAddingTask ? (
         <div className="p-4 mt-3 border border-gray-200 rounded-lg">
-          <h3 className="mb-3 font-medium">Task details</h3>
+          <h3 className="mb-3 font-medium">New Task Details</h3>
 
           <div className="space-y-4">
             <div>
               <label className="block mb-1 text-sm font-medium">
-                Task name
+                Task name (leave empty for default)
               </label>
               <input
                 type="text"
                 name="name"
-                value={
-                  editTaskData.name ||
-                  defaultTaskNames[editTaskData.status] ||
-                  "New Task"
-                }
-                onChange={handleChange}
-                className="w-full p-2 font-semibold border rounded"
+                value={newTaskData.name}
+                onChange={handleNewTaskChange}
+                placeholder={`Default: ${
+                  defaultTaskNames[columnStatus] || "New Task"
+                }`}
+                className="w-full p-2 border rounded"
               />
             </div>
 
             <div>
               <label className="block mb-1 text-sm font-medium">
-                Description
+                Description (optional)
               </label>
               <textarea
                 name="description"
-                value={editTaskData.description}
-                onChange={handleChange}
-                placeholder="Enter a short description"
+                value={newTaskData.description}
+                onChange={handleNewTaskChange}
+                placeholder="Enter description"
                 className="w-full p-2 text-sm border rounded"
                 rows="2"
               />
@@ -225,8 +248,8 @@ const TaskColumn = ({
               <label className="block mb-1 text-sm font-medium">Icon</label>
               <select
                 name="icon"
-                value={editTaskData.icon}
-                onChange={handleChange}
+                value={newTaskData.icon}
+                onChange={handleNewTaskChange}
                 className="w-full p-2 border rounded"
               >
                 <option value="📝">📝 Note</option>
@@ -237,30 +260,10 @@ const TaskColumn = ({
               </select>
             </div>
 
-            <div>
-              <p className="mb-1 text-sm font-medium">Status</p>
-              <div className="flex flex-col space-y-2">
-                {["in-progress", "completed", "wont-do"].map((status) => (
-                  <label key={status} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="status"
-                      checked={editTaskData.status === status}
-                      onChange={() => handleStatusChange(status)}
-                      className="text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="capitalize">
-                      {status.replace("-", " ")}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
             <div className="flex justify-between pt-2">
               <button
-                onClick={resetForm}
-                className="flex items-center px-3 py-1 text-sm border border-gray-300 rounded bg-red-400 hover:bg-red-500"
+                onClick={resetNewTaskForm}
+                className="flex items-center px-3 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600"
               >
                 <XMarkIcon className="w-4 h-4 mr-1" />
                 Cancel
@@ -270,7 +273,7 @@ const TaskColumn = ({
                 className="flex items-center px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
               >
                 <CheckIcon className="w-4 h-4 mr-1" />
-                Save
+                Create Task
               </button>
             </div>
           </div>

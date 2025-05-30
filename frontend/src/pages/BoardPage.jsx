@@ -46,11 +46,18 @@ const BoardPage = () => {
     }
   };
 
-  const handleCreateTask = async (status) => {
+  const handleCreateTask = async (taskData) => {
+    // Nhận cả object taskData thay vì chỉ status
     try {
-      const response = await api.post(`/api/tasks/${boardId}`, {
-        status,
-      });
+      const response = await api.post(
+        `/api/tasks/${boardId}`,
+        taskData, // Gửi trực tiếp object, không cần JSON.stringify
+        {
+          headers: {
+            "Content-Type": "application/json", // Đảm bảo header đúng
+          },
+        }
+      );
       setTasks([...tasks, response.data]);
       toast.success("Task created successfully");
     } catch (err) {
@@ -103,7 +110,7 @@ const BoardPage = () => {
   const statusColumns = [
     { id: "in-progress", title: "In Progress" },
     { id: "completed", title: "Completed" },
-    { id: "wont-do", title: "Won't Do" },
+    { id: "wont-do", title: "Wont Do" },
   ];
 
   return (
@@ -117,7 +124,7 @@ const BoardPage = () => {
               key={column.id}
               title={column.title}
               tasks={tasks.filter((task) => task.status === column.id)}
-              onCreateTask={() => handleCreateTask(column.id)}
+              onCreateTask={(taskData) => handleCreateTask(taskData)}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
             />

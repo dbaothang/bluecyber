@@ -30,8 +30,8 @@ exports.createDefaultBoard = async (userId) => {
         board: board._id,
       },
       {
-        name: "Task Won't Do",
-        description: "This is a sample task that won't be done",
+        name: "Task Wont Do",
+        description: "This is a sample task that wont be done",
         icon: "❌",
         status: "wont-do",
         board: board._id,

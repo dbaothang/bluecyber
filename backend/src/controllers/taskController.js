@@ -60,6 +60,7 @@ exports.createTask = async (req, res) => {
   try {
     const { boardId } = req.params;
     const { name, description, icon, status } = req.body;
+    console.log(req.body);
 
     // Check if the board exists and the user owns it
     const board = await Board.findById(boardId);
@@ -70,12 +71,12 @@ exports.createTask = async (req, res) => {
     if (board.owner.toString() !== req.user.userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
-
+    default_name = "New Task" + status;
     const task = new Task({
-      name: name || "New Task",
+      name: name || default_name,
       description: description || "",
       icon: icon || "📝",
-      status: status || "in-progress",
+      status: status,
       board: boardId,
     });
 
