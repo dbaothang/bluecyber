@@ -20,7 +20,7 @@ services:
     ports:
       - "5173:5173" # Ánh xạ cổng 5173
     environment:
-      - VITE_API_BASE_URL=http://localhost:3000 # Địa chỉ backend để frontend gọi API
+      - VITE_API_BASE_URL=http://localhost:3001 # Địa chỉ backend để frontend gọi API
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -31,7 +31,7 @@ services:
   mongo:
     image: mongo:6 # Dùng MongoDB phiên bản 6
     ports:
-      - "27017:27017" # Ánh xạ cổng MongoDB
+      - "27018:27017" # Ánh xạ cổng MongoDB
     volumes:
       - mongodb_data:/data/db # Lưu dữ liệu database vào volume để không mất khi tắt container
 

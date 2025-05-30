@@ -3,14 +3,19 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import Terminal from "vite-plugin-terminal";
 
-// https://vite.dev/config/
+const isProduction = process.env.NODE_ENV === "production";
+
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    Terminal({
-      console: "terminal",
-      output: ["terminal", "console"],
-    }),
+    ...(!isProduction
+      ? [Terminal({ console: "terminal", output: ["terminal", "console"] })]
+      : []),
   ],
+  server: {
+    host: true, // Cho phép truy cập từ mọi địa chỉ IP (0.0.0.0)
+    port: 5173,
+    strictPort: true, // Tắt tự động chọn cổng khác nếu 5173 bị chiếm
+  },
 });
