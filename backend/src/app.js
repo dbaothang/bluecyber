@@ -15,7 +15,14 @@ const taskRoutes = require("./routes/taskRoutes");
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://45.77.172.27:5173"], // Chỉ cho phép frontend accessAdd commentMore actions
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 
 // Database connection
